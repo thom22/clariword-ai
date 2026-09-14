@@ -1,0 +1,192 @@
+.page-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.page-head-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.head-actions { display: flex; align-items: center; gap: 8px; }
+.search .input { width: 280px; }
+
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 24px 64px;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 26px;
+  align-items: start;
+}
+
+/* ---------------- sidebar ---------------- */
+
+.sidebar { display: grid; gap: 18px; position: sticky; top: 78px; }
+.collections { display: grid; gap: 2px; }
+.collections button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-soft);
+  font-size: 13.5px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+}
+.collections button:hover { background: var(--surface-sunken); color: var(--text); }
+.collections button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.count { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.collections button[aria-pressed="true"] .count { color: var(--accent); }
+
+.filters { display: grid; gap: 7px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip-row button {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.chip-row button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+.progress { padding: 12px; display: grid; gap: 9px; }
+.progress-row { display: grid; gap: 4px; }
+.progress-head { display: flex; justify-content: space-between; font-size: 12.5px; }
+.bar { height: 6px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* ---------------- results ---------------- */
+
+.results-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.results-head .muted { font-size: 13px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 12px;
+}
+
+.word-card {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+.word-card:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: var(--shadow); }
+.word-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.word-term { font-size: 16px; font-weight: 620; letter-spacing: -0.015em; word-break: break-word; }
+.word-term.is-long { font-size: 13.5px; font-weight: 560; line-height: 1.45; }
+.word-pron { font-size: 12px; color: var(--text-faint); font-family: var(--mono); }
+.word-meaning {
+  font-size: 13px;
+  color: var(--text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.word-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  padding-top: 2px;
+}
+.word-source { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.word-source span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+.fav { color: var(--accent); }
+
+/* ---------------- drawer ---------------- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 23, 22, .32);
+  z-index: 20;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  z-index: 21;
+  overflow-y: auto;
+  animation: slide-in 160ms cubic-bezier(.2,.8,.3,1);
+}
+@keyframes slide-in { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.drawer-inner { padding: 20px 22px 40px; display: grid; gap: 16px; }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.drawer-term { font-size: 24px; font-weight: 640; letter-spacing: -0.02em; word-break: break-word; }
+.drawer-term.is-long { font-size: 16px; font-weight: 560; line-height: 1.45; }
+.drawer-pron { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 5px; font-size: 13px; }
+.drawer-pron .mono { color: var(--text-faint); }
+.drawer-actions { display: flex; gap: 6px; flex: none; }
+
+.block { display: grid; gap: 4px; }
+.block p { font-size: 14px; }
+.origin {
+  display: grid;
+  gap: 6px;
+  padding: 13px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.origin-title { font-weight: 580; font-size: 13.5px; }
+.origin blockquote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent);
+  color: var(--text-soft);
+  font-size: 13.5px;
+}
+.origin-meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--text-faint); flex-wrap: wrap; }
+
+.status-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.encounters { display: grid; gap: 6px; }
+.encounter {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+}
+.encounter .muted { font-size: 11.5px; }
+
+.drawer-foot { display: flex; justify-content: space-between; gap: 8px; padding-top: 4px; }
+
+@media (max-width: 880px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .collections { grid-auto-flow: column; overflow-x: auto; }
+  .search .input { width: 180px; }
+}

@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "ClariWord AI",
+  "version": "1.0.0",
+  "description": "Understand difficult words and sentences in context, improve your pronunciation, and remember vocabulary from anything you read online.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "ClariWord AI — your AI reading companion",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "options_page": "options/options.html",
+  "permissions": ["storage", "contextMenus", "activeTab", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "exclude_matches": [
+        "https://chrome.google.com/webstore/*",
+        "https://chromewebstore.google.com/*"
+      ],
+      "js": ["content/content-script.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "commands": {
+    "explain-selection": {
+      "suggested_key": { "default": "Alt+Shift+E" },
+      "description": "Explain the current selection with ClariWord AI"
+    },
+    "open-vocabulary": {
+      "suggested_key": { "default": "Alt+Shift+V" },
+      "description": "Open saved vocabulary"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/icons/icon-128.png", "assets/fonts/*"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
+  }
+}

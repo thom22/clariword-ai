@@ -1,0 +1,22 @@
+{
+  "name": "clariword-ai",
+  "version": "1.0.0",
+  "description": "Understand difficult words and sentences in context, improve your pronunciation, and remember vocabulary from anything you read online.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node build.mjs --tests && node --test \"dist-tests/*.test.mjs\"",
+    "package": "node build.mjs && node scripts/zip.mjs",
+    "verify": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^22.20.2",
+    "esbuild": "^0.23.0",
+    "playwright": "^1.47.2",
+    "typescript": "^5.5.4"
+  }
+}

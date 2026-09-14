@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ClariWord AI — Settings</title>
+    <link rel="stylesheet" href="../ui/theme.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <header class="page-head">
+      <div class="page-head-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <div>
+            <div class="brand-name">ClariWord AI</div>
+            <div class="tagline">Settings</div>
+          </div>
+        </div>
+        <nav class="head-links">
+          <a href="../vocabulary/vocabulary.html">Saved words</a>
+          <a href="../review/review.html">Review</a>
+          <a href="../practice/practice.html">Practice</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="welcome card" id="welcome" hidden>
+        <h2>Welcome to ClariWord AI</h2>
+        <p class="muted">
+          Highlight any word, phrase or sentence while you read and ClariWord explains what it means
+          <em>there</em> — not just in the dictionary. It works right now in <strong>Demo mode</strong> with a
+          built-in offline lexicon; connect your own backend below whenever you are ready.
+        </p>
+        <button class="btn" id="dismiss-welcome">Got it</button>
+      </div>
+
+      <section class="card section" aria-labelledby="h-general">
+        <h2 id="h-general">General</h2>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Enable ClariWord</span>
+            <span class="row-hint">Turn the extension off everywhere without uninstalling it.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="enabled" /><span></span
+            ><span class="sr-only">Enable ClariWord</span></label>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Show helper after highlighting</span>
+            <span class="row-hint">When off, use the right-click menu or Alt+Shift+E instead.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="autoHelper" /><span></span
+            ><span class="sr-only">Show helper after highlighting</span></label>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Helper style</span>
+            <span class="row-hint">A single button, or the five-action quick toolbar.</span>
+          </div>
+          <div class="segmented" id="helperMode" role="group" aria-label="Helper style">
+            <button type="button" data-value="icon">Icon only</button>
+            <button type="button" data-value="toolbar">Quick toolbar</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Theme</span>
+            <span class="row-hint">Applies to the card on web pages and to these pages.</span>
+          </div>
+          <div class="segmented" id="theme" role="group" aria-label="Theme">
+            <button type="button" data-value="light">Light</button>
+            <button type="button" data-value="dark">Dark</button>
+            <button type="button" data-value="system">System</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card section" aria-labelledby="h-reading">
+        <h2 id="h-reading">Reading &amp; explanations</h2>
+
+        <div class="row row-stack">
+          <div class="row-text">
+            <span class="row-title">Explanation level</span>
+            <span class="row-hint" id="level-hint"></span>
+          </div>
+          <div class="segmented" id="explanationLevel" role="group" aria-label="Explanation level">
+            <button type="button" data-value="beginner">Beginner</button>
+            <button type="button" data-value="intermediate">Intermediate</button>
+            <button type="button" data-value="advanced">Advanced</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Preferred English accent</span>
+            <span class="row-hint">Used for IPA and for choosing a speech voice.</span>
+          </div>
+          <div class="segmented" id="accent" role="group" aria-label="Preferred accent">
+            <button type="button" data-value="american">American</button>
+            <button type="button" data-value="british">British</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Speech voice</span>
+            <span class="row-hint" id="voice-hint">Voices come from your operating system.</span>
+          </div>
+          <div class="row-controls">
+            <select class="select" id="ttsVoiceUri" aria-label="Speech voice"></select>
+            <button class="btn" id="test-voice" type="button">Test</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Speaking rate</span>
+            <span class="row-hint"><span id="rate-value">0.95</span>× — slower is easier to imitate.</span>
+          </div>
+          <input type="range" id="ttsRate" min="0.5" max="1.5" step="0.05" aria-label="Speaking rate" />
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Play pronunciation automatically</span>
+            <span class="row-hint">Speaks single words as soon as the card opens.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="autoPlayPronunciation" /><span></span
+            ><span class="sr-only">Play pronunciation automatically</span></label>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Longest selection</span>
+            <span class="row-hint">Anything longer is refused rather than sent. Max 4000.</span>
+          </div>
+          <input class="input input-narrow" type="number" id="maxSelectionChars" min="120" max="4000" step="20" />
+        </div>
+      </section>
+
+      <section class="card section" aria-labelledby="h-ai">
+        <h2 id="h-ai">AI backend</h2>
+        <p class="section-note muted">
+          ClariWord never stores an AI provider key in the browser. The extension talks to a backend you
+          control, and that backend holds the key. Until you configure one, Demo mode uses a built-in
+          offline lexicon.
+        </p>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Mode</span>
+            <span class="row-hint" id="mode-hint"></span>
+          </div>
+          <div class="segmented" id="aiMode" role="group" aria-label="AI mode">
+            <button type="button" data-value="mock">Demo</button>
+            <button type="button" data-value="backend">Backend</button>
+          </div>
+        </div>
+
+        <div class="row row-stack" id="backend-fields">
+          <label class="row-text" for="backendUrl">
+            <span class="row-title">Backend URL</span>
+            <span class="row-hint">Base URL only — ClariWord appends <code>/api/explain</code>.</span>
+          </label>
+          <div class="row-controls">
+            <input class="input" type="url" id="backendUrl" placeholder="https://clariword.example.com" spellcheck="false" />
+            <button class="btn" id="test-backend" type="button">Test connection</button>
+          </div>
+          <label class="row-text" for="backendToken">
+            <span class="row-title">Access token <span class="faint">(optional)</span></span>
+            <span class="row-hint">Sent as <code>Authorization: Bearer …</code> to your own backend.</span>
+          </label>
+          <input class="input" type="password" id="backendToken" placeholder="Leave empty if your backend is open" autocomplete="off" />
+          <p class="status" id="backend-status" role="status"></p>
+        </div>
+      </section>
+
+      <section class="card section" aria-labelledby="h-privacy">
+        <h2 id="h-privacy">Privacy</h2>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Send neighbouring sentences</span>
+            <span class="row-hint">Helps resolve words like “bank” from the surrounding text.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="sendNeighbouringContext" /><span></span
+            ><span class="sr-only">Send neighbouring sentences</span></label>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Send page title and domain</span>
+            <span class="row-hint">Off by default. The full URL is never sent.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="sendPageMetadata" /><span></span
+            ><span class="sr-only">Send page title and domain</span></label>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Save the source page with vocabulary</span>
+            <span class="row-hint">Stored locally so you can revisit where you met a word.</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="saveSourcePage" /><span></span
+            ><span class="sr-only">Save the source page with vocabulary</span></label>
+        </div>
+
+        <div class="callout" id="privacy-preview"></div>
+
+        <div class="row row-stack">
+          <label class="row-text" for="disabledDomains">
+            <span class="row-title">Never run on these sites</span>
+            <span class="row-hint">One domain per line, e.g. <code>mail.google.com</code>.</span>
+          </label>
+          <textarea class="textarea" id="disabledDomains" spellcheck="false" rows="3"></textarea>
+        </div>
+
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Stored on this device</span>
+            <span class="row-hint" id="storage-note">Saved vocabulary, daily counts and these settings.</span>
+          </div>
+          <div class="row-controls">
+            <button class="btn" id="export-data" type="button">Export JSON</button>
+            <button class="btn" data-variant="danger" id="clear-data" type="button">Clear saved data</button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-foot muted">
+        ClariWord AI v<span id="version"></span> · Settings save as you change them.
+        <button class="btn" data-variant="ghost" id="reset" type="button">Reset to defaults</button>
+      </footer>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ClariWord AI — Saved words</title>
+    <link rel="stylesheet" href="../ui/theme.css" />
+    <link rel="stylesheet" href="vocabulary.css" />
+  </head>
+  <body>
+    <header class="page-head">
+      <div class="page-head-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <div>
+            <div class="brand-name">Saved words</div>
+            <div class="tagline" id="subtitle">Your vocabulary, with the place you met each word</div>
+          </div>
+        </div>
+        <div class="head-actions">
+          <label class="search">
+            <span class="sr-only">Search saved words</span>
+            <input class="input" type="search" id="search" placeholder="Search words, meanings, sources…" />
+          </label>
+          <button class="btn" data-variant="primary" id="start-review">Review</button>
+          <a class="btn" href="../options/options.html">Settings</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar" aria-label="Collections">
+        <nav class="collections" id="collections">
+          <button type="button" data-collection="all" aria-pressed="true">All words<span class="count" data-count="all"></span></button>
+          <button type="button" data-collection="recent">Recently added<span class="count" data-count="recent"></span></button>
+          <button type="button" data-collection="encounters">Most encountered<span class="count" data-count="encounters"></span></button>
+          <button type="button" data-collection="due">Need review<span class="count" data-count="due"></span></button>
+          <button type="button" data-collection="mastered">Mastered<span class="count" data-count="mastered"></span></button>
+          <button type="button" data-collection="favorites">Favourites<span class="count" data-count="favorites"></span></button>
+        </nav>
+
+        <div class="filters">
+          <span class="label">Learning status</span>
+          <div class="chip-row" id="status-filter" role="group" aria-label="Filter by learning status">
+            <button type="button" data-status="all" aria-pressed="true">All</button>
+            <button type="button" data-status="new">New</button>
+            <button type="button" data-status="learning">Learning</button>
+            <button type="button" data-status="familiar">Familiar</button>
+            <button type="button" data-status="mastered">Mastered</button>
+          </div>
+        </div>
+
+        <div class="progress card" id="progress"></div>
+      </aside>
+
+      <section class="results" aria-live="polite">
+        <div class="results-head">
+          <h2 id="results-title">All words</h2>
+          <span class="muted" id="results-count"></span>
+        </div>
+        <div class="grid" id="grid"></div>
+        <div class="empty" id="empty" hidden>
+          <h3>Nothing here yet</h3>
+          <p class="muted" id="empty-note">
+            Highlight a word while you read and press Save. ClariWord keeps the sentence you found it in.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <aside class="drawer" id="drawer" hidden aria-label="Word details">
+      <div class="drawer-inner" id="drawer-inner"></div>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+
+    <script type="module" src="vocabulary.js"></script>
+  </body>
+</html>

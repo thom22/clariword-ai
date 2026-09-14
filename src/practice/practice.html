@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ClariWord AI — Pronunciation practice</title>
+    <link rel="stylesheet" href="../ui/theme.css" />
+    <link rel="stylesheet" href="practice.css" />
+  </head>
+  <body>
+    <header class="page-head">
+      <div class="page-head-inner">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <div>
+            <div class="brand-name">Pronunciation practice</div>
+            <div class="tagline">Listen, repeat, compare</div>
+          </div>
+        </div>
+        <a class="btn" href="../vocabulary/vocabulary.html">Saved words</a>
+      </div>
+    </header>
+
+    <main class="practice">
+      <section class="word-panel card">
+        <label class="label" for="word-input">Word or phrase</label>
+        <div class="word-entry">
+          <input class="input" id="word-input" type="text" placeholder="ostensibly" autocomplete="off" spellcheck="false" />
+          <button class="btn" id="load-word" type="button">Practise this</button>
+        </div>
+
+        <div class="target" id="target" hidden>
+          <div class="target-word" id="target-word"></div>
+          <div class="target-pron">
+            <span class="mono" id="target-ipa"></span>
+            <span id="target-phonetic"></span>
+          </div>
+          <div class="target-actions">
+            <button class="btn" data-variant="primary" id="listen" type="button">Listen</button>
+            <button class="btn" id="listen-slow" type="button">Listen slowly</button>
+          </div>
+          <p class="muted" id="stress-note"></p>
+        </div>
+      </section>
+
+      <section class="record-panel card" aria-labelledby="h-record">
+        <h2 id="h-record">Record your pronunciation</h2>
+        <p class="muted" id="mic-note">
+          ClariWord asks for the microphone only here, and only when you press record. Audio stays in this tab
+          unless you send it for scoring.
+        </p>
+
+        <div class="record-row">
+          <button class="btn record-btn" id="record" type="button" disabled>
+            <span class="dot" aria-hidden="true"></span><span id="record-label">Record</span>
+          </button>
+          <div class="meter" aria-hidden="true"><i id="meter-fill"></i></div>
+          <span class="timer mono" id="timer">0.0s</span>
+        </div>
+
+        <div class="playback" id="playback" hidden>
+          <audio id="audio" controls></audio>
+          <div class="playback-actions">
+            <button class="btn" id="compare" type="button">Play model, then yours</button>
+            <button class="btn" id="rerecord" type="button">Record again</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="score-panel card" aria-labelledby="h-score">
+        <h2 id="h-score">Scoring</h2>
+        <p class="muted" id="score-availability"></p>
+
+        <div class="score-actions">
+          <button class="btn" data-variant="primary" id="score" type="button" disabled>Score my pronunciation</button>
+          <label class="sim-toggle">
+            <input type="checkbox" id="use-simulator" />
+            <span>Use the dev simulator</span>
+          </label>
+        </div>
+
+        <div class="result" id="result" hidden></div>
+      </section>
+    </main>
+    <script type="module" src="practice.js"></script>
+  </body>
+</html>

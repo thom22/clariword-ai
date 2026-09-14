@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ClariWord AI</title>
+    <link rel="stylesheet" href="../ui/theme.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup-head">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <div>
+            <div class="brand-name">ClariWord AI</div>
+            <div class="tagline">Understand what you read.<br />Remember what you learn.</div>
+          </div>
+        </div>
+        <label class="switch" title="Enable ClariWord on web pages">
+          <input type="checkbox" id="enabled" />
+          <span></span>
+          <span class="sr-only">Enable ClariWord</span>
+        </label>
+      </header>
+
+      <section class="stats" aria-label="Your progress">
+        <div class="stat">
+          <span class="stat-value" id="stat-today">–</span>
+          <span class="stat-label">Looked up today</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-saved">–</span>
+          <span class="stat-label">Saved words</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-due">–</span>
+          <span class="stat-label">To review</span>
+        </div>
+      </section>
+
+      <p class="streak faint" id="streak" hidden></p>
+
+      <nav class="actions" aria-label="ClariWord pages">
+        <button class="btn" data-variant="primary" id="open-review">Review vocabulary</button>
+        <button class="btn" id="open-vocabulary">Saved words</button>
+        <button class="btn" id="open-options">Settings</button>
+      </nav>
+
+      <section class="prefs" aria-label="Quick settings">
+        <div class="pref">
+          <span class="label">Explanation level</span>
+          <div class="segmented" id="level" role="group" aria-label="Explanation level">
+            <button type="button" data-value="beginner">Beginner</button>
+            <button type="button" data-value="intermediate">Intermediate</button>
+            <button type="button" data-value="advanced">Advanced</button>
+          </div>
+        </div>
+        <div class="pref">
+          <span class="label">Preferred accent</span>
+          <div class="segmented" id="accent" role="group" aria-label="Preferred accent">
+            <button type="button" data-value="american">American</button>
+            <button type="button" data-value="british">British</button>
+          </div>
+        </div>
+        <div class="pref pref-row">
+          <div>
+            <span class="pref-title">Helper after highlighting</span>
+            <span class="pref-hint faint" id="helper-hint">Shows a small ClariWord button</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="auto-helper" />
+            <span></span>
+            <span class="sr-only">Show helper after highlighting</span>
+          </label>
+        </div>
+      </section>
+
+      <footer class="popup-foot">
+        <span class="faint" id="mode-note">Demo mode</span>
+        <span class="faint" id="version"></span>
+      </footer>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

@@ -37,7 +37,7 @@ node smoke.js       # 11 checks, no key needed
 | `PORT` | `8787` | |
 | `PROVIDER` | *(empty → echo)* | `anthropic` · `openai` · empty |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | — | Whichever provider you chose |
-| `OPENAI_BASE_URL` | OpenAI | Point the OpenAI adapter elsewhere — e.g. Gemini's compatible endpoint |
+| `OPENAI_BASE_URL` | OpenAI | Only for OpenAI-compatible services; leave unset for OpenAI itself |
 | `MODEL` | provider default | |
 | `ACCESS_TOKEN` | — | If set, requires `Authorization: Bearer …`; paste the same value into Settings. Unset with `NODE_ENV=production` logs a loud startup warning |
 | `ALLOWED_ORIGINS` | any | Set to `chrome-extension://<your id>` in production |
@@ -66,9 +66,9 @@ so it is picked up automatically.
 | --- | --- | --- |
 | `PROVIDER` | `anthropic` or `openai` | Yes — without it you deploy the echo placeholder |
 | `ANTHROPIC_API_KEY` | your key, if `PROVIDER=anthropic` | One of the two |
-| `OPENAI_API_KEY` | your key, if `PROVIDER=openai` (**also the Gemini key**) | One of the two |
-| `OPENAI_BASE_URL` | Gemini's endpoint — see below | Only for Gemini |
-| `MODEL` | e.g. `gemini-2.5-flash` or `claude-sonnet-4-5` | Yes for Gemini — the default is an OpenAI model |
+| `OPENAI_API_KEY` | your key, if `PROVIDER=openai` | One of the two |
+| `OPENAI_BASE_URL` | *leave unset for OpenAI* | Only for compatible services |
+| `MODEL` | e.g. `gpt-4o-mini` | No — defaults to `gpt-4o-mini` |
 | `ACCESS_TOKEN` | a long random string | **Yes in practice** — see below |
 | `ALLOWED_ORIGINS` | `chrome-extension://<your published id>` | Strongly recommended |
 | `RATE_LIMIT_PER_MINUTE` | e.g. `20` | No — defaults to `20` |
@@ -89,31 +89,30 @@ the check passes on a locked-down instance. On failure the service restarts
 `https://<service>.up.railway.app` domain into ClariWord → Settings → AI backend
 and press **Test connection**.
 
-### Using Gemini
+### Using OpenAI
 
-There is no `PROVIDER=gemini`. Google ships an OpenAI-compatible endpoint, so the
-existing OpenAI adapter talks to it unchanged — set the base URL and the model:
+`PROVIDER=openai` is the adapter's native target, so there is nothing to
+redirect — set the key and go:
 
 ```
 PROVIDER=openai
-OPENAI_API_KEY=<your Gemini API key>
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-MODEL=gemini-2.5-flash
+OPENAI_API_KEY=sk-...
+MODEL=gpt-4o-mini
 ```
 
-Get the key from [Google AI Studio](https://aistudio.google.com/apikey); it looks
-like `AIza…`. Two mistakes worth avoiding, because both fail quietly:
+Get the key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+`MODEL` is optional — the adapter already defaults to `gpt-4o-mini`.
 
-- **`PROVIDER` must be exactly `openai`.** Any unrecognised value (`gemini`,
-  `Gemini API Key`, …) falls through to the echo provider, and the extension
-  shows placeholder text instead of an error.
-- **Set `MODEL`.** The adapter defaults to `gpt-4o-mini`, which Gemini does not
-  serve, so the request 404s.
+Leave **`OPENAI_BASE_URL` unset**. It exists only to point the same adapter at
+an OpenAI-*compatible* service (a self-hosted gateway, or Gemini's compat
+endpoint). If it is left over from an earlier provider, requests still go
+there and OpenAI is never reached — delete the variable.
 
-The compatibility layer is in beta. If `response_format: json_object` gives you
-trouble, the prompts already demand raw JSON and `parseModelJson` tolerates
-fenced output — or write a native adapter, which is ~40 lines against
-`generativelanguage.googleapis.com` and keeps this dependency-free.
+One failure mode worth knowing, because it is silent: **`PROVIDER` must be
+exactly `openai`.** Any other value falls through to the echo provider and the
+extension shows placeholder text instead of an error. `/api/health` tells you
+which one is live — it reports the model name, or `echo (no provider
+configured)`.
 
 ### A public URL is a public bill
 
@@ -136,19 +135,19 @@ context, a page title and a domain); output sizes are typical filled schemas.
 not measured against your traffic.** Treat these as an order of magnitude, and
 read the real numbers off your provider dashboard.
 
-At **`gemini-2.5-flash`** rates ($0.30 / MTok input, $2.50 / MTok output):
+At **`gpt-4o-mini`** rates ($0.15 / MTok input, $0.60 / MTok output):
 
 | Route | Input tokens | Output tokens | Cost / 1,000 lookups |
 | --- | --- | --- | --- |
-| `/api/explain` — word | ~740 | ~260 | **~$0.87** |
-| `/api/explain` — phrase | ~650 | ~300 | ~$0.94 |
-| `/api/explain` — sentence | ~660 | ~420 | ~$1.25 |
-| `/api/explain` — passage | ~610 | ~520 | ~$1.48 |
-| `/api/chat` — one follow-up | ~440 | ~150 | ~$0.51 |
+| `/api/explain` — word | ~740 | ~260 | **~$0.27** |
+| `/api/explain` — phrase | ~650 | ~300 | ~$0.28 |
+| `/api/explain` — sentence | ~660 | ~420 | ~$0.35 |
+| `/api/explain` — passage | ~610 | ~520 | ~$0.40 |
+| `/api/chat` — one follow-up | ~440 | ~150 | ~$0.16 |
 
-So **roughly $0.90 per 1,000 word lookups**, the most common case, and about
-$1.50 per 1,000 for the longest passages. A worst case where every response runs
-to its `max_tokens` cap (800 for words, 1,200 otherwise) is ~$1.60–$3.20 per
+So **roughly $0.27 per 1,000 word lookups**, the most common case, and about
+$0.40 per 1,000 for the longest passages. A worst case where every response runs
+to its `max_tokens` cap (800 for words, 1,200 otherwise) is ~$0.43–$0.82 per
 1,000.
 
 Output dominates: the prompts are long but fixed, while the answer is what you
@@ -159,9 +158,10 @@ The same token counts at other models' rates, for a word lookup per 1,000:
 
 | Model | Input / output per MTok | Cost / 1,000 word lookups |
 | --- | --- | --- |
+| `gpt-4o-mini` | $0.15 / $0.60 | ~$0.27 |
+| `gpt-4.1-mini` | $0.40 / $1.60 | ~$0.71 |
 | `gemini-2.5-flash` | $0.30 / $2.50 | ~$0.87 |
-| `gemini-3.5-flash-lite` | $0.30 / $2.50 | ~$0.87 |
-| `gemini-3.5-flash` | $1.50 / $9.00 | ~$3.45 |
+| `gpt-4o` | $2.50 / $10.00 | ~$4.46 |
 | `claude-sonnet-4-5` | $3.00 / $15.00 | ~$6.13 |
 
 Two things that move this number more than the model choice:

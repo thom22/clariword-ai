@@ -33,9 +33,11 @@ Not a dictionary popup:
 - [Privacy](#privacy)
 - [Development](#development)
 - [Testing](#testing)
-- [Chrome Web Store readiness](#chrome-web-store-readiness)
-- [Roadmap](#roadmap)
-- [What is left for production](#what-is-left-for-production)
+- [Status](#status)
+- [What works today](#what-works-today)
+- [Known limitations](#known-limitations)
+- [Designed for, not yet built](#designed-for-not-yet-built)
+- [Running your own backend](#running-your-own-backend)
 
 ---
 
@@ -255,7 +257,7 @@ clariword-ai/
 │   ├── popup/  options/  vocabulary/  review/  practice/      extension pages
 │   ├── ui/                        theme.css + page helpers shared by those pages
 │   └── assets/icons/              16 / 32 / 48 / 128 / 512
-├── backend/                       reference server (no dependencies)
+├── backend/                       the server that holds the AI key (no dependencies)
 ├── tests/                         unit tests + the hostile-CSS article fixture
 ├── scripts/                       icons · e2e · screenshots · zip
 ├── docs/                          ARCHITECTURE · API · TESTING · PRIVACY
@@ -392,67 +394,87 @@ paths is in [`docs/TESTING.md`](docs/TESTING.md).
 
 ---
 
-## Chrome Web Store readiness
+## Status
 
-Ready now:
+ClariWord is built and running. The extension is Manifest V3 with no remote
+code, a strict extension CSP and no `eval`; it requests the minimum permissions
+its single feature needs. `npm run package` produces an uploadable zip.
 
-- Manifest V3, no remote code, strict extension CSP, no `eval`
-- Minimal permissions; host access requested on demand
-- Icons at 16 / 32 / 48 / 128 (plus a 512 master for the listing)
-- `npm run package` produces an uploadable zip
-
-**Listing copy**
-
-> **Name** ClariWord AI
-> **Short description** Your AI reading and vocabulary companion.
-> **Description** Understand difficult words and sentences in context, improve
-> your pronunciation, and remember vocabulary from anything you read online.
-
-Still to produce before submission: 1280×800 screenshots and a 440×280 tile, a
-hosted privacy policy URL (use `docs/PRIVACY.md` as the copy), and the
-single-purpose justification — "explain and remember vocabulary encountered while
-reading web pages" — plus a line per permission, which the table above gives you.
+| | |
+| --- | --- |
+| Extension | Feature-complete — see [What it does](#what-it-does) |
+| Backend | Deployed; `GET /api/health` reports the configured model |
+| Tests | 55 unit · 10 backend smoke · 36 browser end-to-end |
 
 ---
 
-## Roadmap
+## What works today
 
-**Phase 1 — shipped here.** MV3 setup, selection detection, floating trigger and
-quick toolbar, explanation card, context extraction, demo mode, the backend
-interface, word / phrase / sentence / passage explanations, text-to-speech,
-right-click menu, save, local storage, popup, settings, vocabulary dashboard.
+**Reading.** Selection detection, floating trigger, quick toolbar, right-click
+menu, and an explanation card rendered in a Shadow DOM root so page styles
+cannot reach it. Words, phrases, sentences and passages each get their own
+explanation shape — idioms are explained as a unit, sentences are broken into
+segments rather than defined word by word.
 
-**Phase 2 — shipped here too.** Follow-up chat, vocabulary review, repeated-
-encounter tracking, grammar explanations, pronunciation practice with recording.
+**Understanding.** Context-first explanations at three reader levels, tone and
+register, author intent, IPA and a stress-marked respelling, text-to-speech in
+American or British English, and follow-up questions about the same selection.
 
-**Phase 3 — designed for, not built.** The data model, scheduler and storage
-interface are in place for: adaptive difficulty from the signals already being
-recorded (lookups, saves, encounters, review outcomes), full spaced repetition
-(`ReviewState` already carries interval, ease, repetitions and lapses), cloud
-sync and cross-device vocabulary (implement `KeyValueStore` against your API),
-and real pronunciation scoring (implement `PronunciationScorer`, or wire
-`POST /api/pronunciation`).
+**Remembering.** Save anything worth keeping, with the sentence and source page
+alongside it. A vocabulary dashboard, review sessions, and repeated-encounter
+tracking that notices when you look the same word up again.
+
+**Offline.** Demo mode uses a built-in lexicon and makes no network requests at
+all — useful for trying the extension before configuring a backend.
 
 ---
 
-## What is left for production
+## Known limitations
 
-Honest list, in the order I would do it:
+Documented rather than hidden, because they affect what you can expect:
 
-1. **A hosted backend.** The reference server is correct and bounded but
-   single-process and in-memory. Put it behind your infrastructure, add a
-   persistent rate-limit store, set `ALLOWED_ORIGINS` to your published
-   extension id, and set `ACCESS_TOKEN`.
-2. **Prompt tuning against real pages.** `backend/prompts.js` encodes the
-   product rules; the wording of the level guidance is where quality lives, and
-   it wants iteration against Wikipedia, Medium, arXiv and documentation.
-3. **Pronunciation scoring.** The interface, the recorder and the UI are done;
-   the speech model is not. `POST /api/pronunciation` returns 501 on purpose.
-4. **Cost controls.** Per-user quotas and caching at the backend; the extension
-   already caches and rate-limits locally, which is not a substitute.
-5. **iframe support.** Content scripts run in the top frame only today, so a
-   selection inside an embedded reader is not picked up.
-6. **More of the lexicon in demo mode**, if demo mode is meant to be a real
-   offline fallback rather than a development aid.
-7. **Localisation.** All copy is inline English; extracting it to `_locales`
-   is mechanical but not done.
+- **Pronunciation scoring is not implemented.** The recorder and the UI are
+  finished, but scoring needs a real speech model, so
+  `POST /api/pronunciation` returns 501 by design rather than inventing a
+  number that was never measured.
+- **Top frame only.** Content scripts do not run in iframes, so a selection
+  inside an embedded reader is not picked up.
+- **English only.** All interface copy is inline English; it has not been
+  extracted to `_locales`.
+- **Demo mode is a fallback, not a dictionary.** Its offline lexicon covers a
+  small curated set, and it says so rather than guessing.
+- **The rate limiter is per-instance and in-memory.** It resets on deploy and
+  does not span replicas — enough to blunt accidental loops, not a determined
+  abuser.
+
+---
+
+## Designed for, not yet built
+
+The data model and interfaces are already in place for these, which is why they
+are listed as extension points rather than rewrites:
+
+- **Spaced repetition.** `ReviewState` already carries interval, ease,
+  repetitions and lapses.
+- **Adaptive difficulty**, from signals already recorded — lookups, saves,
+  encounters and review outcomes.
+- **Cloud sync and cross-device vocabulary**, by implementing `KeyValueStore`
+  against a remote API.
+- **Pronunciation scoring**, by implementing `PronunciationScorer` or wiring
+  `POST /api/pronunciation` to a speech-assessment service.
+
+---
+
+## Running your own backend
+
+ClariWord holds no AI provider key in the browser — the extension talks to a
+backend, and the backend holds the key. If you would rather run your own than
+use demo mode, `backend/` is a dependency-free Node server that does exactly
+that, and [`backend/README.md`](backend/README.md) covers deploying it,
+the environment variables, and the per-lookup cost.
+
+Two settings matter before sharing a deployment: `ACCESS_TOKEN`, so only your
+extension can use it, and `ALLOWED_ORIGINS`, so only your extension's origin
+is accepted. Without the first, anyone who learns the URL can spend your
+provider credits — the server logs a startup warning if it is unset in
+production.

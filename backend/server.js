@@ -40,7 +40,14 @@ const ALLOWED = (process.env.ALLOWED_ORIGINS ?? '')
 
 function cors(request, response) {
   const origin = request.headers.origin ?? '';
-  const allowed = ALLOWED.length === 0 ? origin || '*' : ALLOWED.includes(origin) ? origin : '';
+  // No Origin header means this is not a cross-origin browser request: curl,
+  // uptime probes and the platform healthcheck all arrive this way. CORS does
+  // not apply to them, so an allowlist must not reject them.
+  if (!origin) {
+    response.setHeader('vary', 'origin');
+    return true;
+  }
+  const allowed = ALLOWED.length === 0 ? origin : ALLOWED.includes(origin) ? origin : '';
   if (allowed) response.setHeader('access-control-allow-origin', allowed);
   response.setHeader('vary', 'origin');
   response.setHeader('access-control-allow-headers', 'content-type, authorization');

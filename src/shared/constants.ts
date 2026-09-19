@@ -28,7 +28,7 @@ export const MAX_CHAT_HISTORY = 12;
 export const PHRASE_MAX_WORDS = 6;
 export const SENTENCE_MAX_WORDS = 60;
 
-export const DEFAULT_BACKEND_URL = 'http://localhost:8787';
+export const DEFAULT_BACKEND_URL = 'https://clariword-ai-production.up.railway.app';
 
 export const BRAND = {
   accent: '#0E7C66',

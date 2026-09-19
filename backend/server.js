@@ -179,7 +179,21 @@ function assertExplanationShape(value, expectedType) {
   return value;
 }
 
+/**
+ * Two ways in, either sufficient:
+ *
+ *  1. A request from an allowlisted extension origin. Browsers set `Origin`
+ *     themselves and pages cannot forge it, so this identifies the published
+ *     extension without shipping a secret inside it — anything bundled into an
+ *     extension can be read straight out of the .crx.
+ *  2. A bearer token, for callers that are not the extension.
+ *
+ * This is a gate, not a wall: a non-browser client can still send any Origin it
+ * likes. The provider spend cap is what actually bounds abuse.
+ */
 function authorised(request) {
+  const origin = request.headers.origin ?? '';
+  if (origin && ALLOWED.includes(origin)) return true;
   if (!ACCESS_TOKEN) return true;
   const header = request.headers.authorization ?? '';
   return header === `Bearer ${ACCESS_TOKEN}`;

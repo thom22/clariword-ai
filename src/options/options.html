@@ -146,36 +146,16 @@
       <section class="card section" aria-labelledby="h-ai">
         <h2 id="h-ai">AI backend</h2>
         <p class="section-note muted">
-          ClariWord never stores an AI provider key in the browser. The extension talks to a backend you
-          control, and that backend holds the key. Until you configure one, Demo mode uses a built-in
-          offline lexicon.
+          Explanations come from ClariWord's hosted service. No AI provider key is ever stored in your
+          browser. If the service is unreachable, Demo mode falls back to a small built-in offline
+          lexicon.
         </p>
 
         <div class="row">
           <div class="row-text">
-            <span class="row-title">Mode</span>
+            <span class="row-title">Connection</span>
             <span class="row-hint" id="mode-hint"></span>
           </div>
-          <div class="segmented" id="aiMode" role="group" aria-label="AI mode">
-            <button type="button" data-value="mock">Demo</button>
-            <button type="button" data-value="backend">Backend</button>
-          </div>
-        </div>
-
-        <div class="row row-stack" id="backend-fields">
-          <label class="row-text" for="backendUrl">
-            <span class="row-title">Backend URL</span>
-            <span class="row-hint">Base URL only — ClariWord appends <code>/api/explain</code>.</span>
-          </label>
-          <div class="row-controls">
-            <input class="input" type="url" id="backendUrl" placeholder="https://clariword.example.com" spellcheck="false" />
-            <button class="btn" id="test-backend" type="button">Test connection</button>
-          </div>
-          <label class="row-text" for="backendToken">
-            <span class="row-title">Access token <span class="faint">(optional)</span></span>
-            <span class="row-hint">Sent as <code>Authorization: Bearer …</code> to your own backend.</span>
-          </label>
-          <input class="input" type="password" id="backendToken" placeholder="Leave empty if your backend is open" autocomplete="off" />
           <p class="status" id="backend-status" role="status"></p>
         </div>
       </section>

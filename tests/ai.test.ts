@@ -126,15 +126,17 @@ test('a phrase is explained as a unit', () => {
 
 test('demo responses go through the same validator as the backend', async () => {
   const service = new AiService();
-  const response = await service.explain(request(), settings());
+  // Explicitly demo mode: the shipped default now points at the hosted
+  // service, and this test must not depend on the network.
+  const response = await service.explain(request(), settings({ aiMode: 'mock' }));
   assert.equal(response.meta.source, 'mock');
   assert.equal(response.explanation.type, 'word');
 });
 
 test('identical requests are served from cache', async () => {
   const service = new AiService();
-  await service.explain(request(), settings());
-  const second = await service.explain(request(), settings());
+  await service.explain(request(), settings({ aiMode: 'mock' }));
+  const second = await service.explain(request(), settings({ aiMode: 'mock' }));
   assert.equal(second.meta.cached, true);
 });
 

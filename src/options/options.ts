@@ -58,8 +58,6 @@ function render(): void {
     const key = input.id as keyof Settings;
     if (typeof settings[key] === 'boolean') input.checked = settings[key] as boolean;
   }
-  query<HTMLInputElement>('#backendUrl').value = settings.backendUrl;
-  query<HTMLInputElement>('#backendToken').value = settings.backendToken;
   query<HTMLInputElement>('#maxSelectionChars').value = String(settings.maxSelectionChars);
   query<HTMLInputElement>('#ttsRate').value = String(settings.ttsRate);
   query('#rate-value').textContent = settings.ttsRate.toFixed(2);
@@ -67,9 +65,8 @@ function render(): void {
   query('#level-hint').textContent = LEVEL_HINTS[settings.explanationLevel];
   query('#mode-hint').textContent =
     settings.aiMode === 'mock'
-      ? 'Demo mode uses a built-in offline lexicon — no network requests.'
-      : 'Requests go to your backend, which holds the AI provider key.';
-  query('#backend-fields').hidden = settings.aiMode !== 'backend';
+      ? 'Offline fallback — the hosted service could not be reached.'
+      : 'Explanations come from the ClariWord service.';
   query('#privacy-preview').textContent = `A lookup currently sends: ${describeOutgoingPayload(SAMPLE_CONTEXT, settings)}. Nothing else leaves your browser.`;
   applyTheme(settings.theme);
 }
@@ -103,9 +100,6 @@ function bindSegments(): void {
   segmented(query('#accent'), settings.accent, (value) => {
     void update({ accent: value as Accent });
     void populateVoices();
-  });
-  segmented(query('#aiMode'), settings.aiMode, (value) => {
-    void update({ aiMode: value === 'backend' ? 'backend' : 'mock' });
   });
 }
 
@@ -168,47 +162,23 @@ async function populateVoices(): Promise<void> {
 /* ------------------------------------------------------------------ */
 
 function bindBackend(): void {
-  const url = query<HTMLInputElement>('#backendUrl');
-  url.addEventListener('change', () => void update({ backendUrl: url.value.trim() }));
-
-  const token = query<HTMLInputElement>('#backendToken');
-  token.addEventListener('change', () => void update({ backendToken: token.value.trim() }));
-
-  query('#test-backend').addEventListener('click', () => {
-    // Must call permissions.request synchronously inside the gesture.
-    const value = url.value.trim();
-    let origin: string;
-    try {
-      origin = `${new URL(value).origin}/*`;
-    } catch {
-      setStatus('error', 'That does not look like a URL. Try https://your-backend.example.com');
-      return;
-    }
-    setStatus('pending', 'Checking…');
-    chrome.permissions.request({ origins: [origin] }, (granted) => {
-      void testBackend(value, granted);
-    });
-  });
+  // Nothing to configure: the service is preconfigured. Report whether it is
+  // reachable so a failure is visible rather than silent.
+  void checkService();
 }
 
-async function testBackend(base: string, granted: boolean): Promise<void> {
-  if (!granted) {
-    setStatus('error', 'Permission to contact that host was declined, so ClariWord cannot reach it.');
-    return;
-  }
-  await update({ backendUrl: base });
+async function checkService(): Promise<void> {
+  setStatus('pending', 'Checking…');
   try {
-    const response = await fetch(new URL('/api/health', `${base.replace(/\/+$/, '')}/`).toString(), {
-      headers: settings.backendToken ? { authorization: `Bearer ${settings.backendToken}` } : {},
-    });
+    const base = settings.backendUrl.replace(/\/+$/, '');
+    const response = await fetch(new URL('/api/health', `${base}/`).toString());
     if (!response.ok) {
-      setStatus('error', `Reached the server, but /api/health returned ${response.status}.`);
+      setStatus('error', `The ClariWord service returned ${response.status}. Demo mode will be used until it recovers.`);
       return;
     }
-    const body = (await response.json().catch(() => ({}))) as { model?: string; status?: string };
-    setStatus('ok', `Connected${body.model ? ` — model ${body.model}` : ''}. Switch Mode to “Backend” to use it.`);
+    setStatus('ok', 'Connected to the ClariWord service.');
   } catch {
-    setStatus('error', 'Could not reach that URL. Is the backend running, and does it allow this extension?');
+    setStatus('error', 'Could not reach the ClariWord service. Demo mode will be used until it recovers.');
   }
 }
 
@@ -258,7 +228,7 @@ function bindDataTools(): void {
       if (!window.confirm('Reset all ClariWord settings to their defaults? Saved vocabulary is kept.')) return;
       settings = await sendMessage('UPDATE_SETTINGS', DEFAULT_SETTINGS);
       render();
-      for (const group of ['#helperMode', '#theme', '#explanationLevel', '#accent', '#aiMode']) {
+      for (const group of ['#helperMode', '#theme', '#explanationLevel', '#accent']) {
         for (const button of queryAll<HTMLButtonElement>('button', query(group))) {
           const key = group.slice(1) as keyof Settings;
           button.setAttribute('aria-pressed', String(button.dataset.value === String(settings[key])));

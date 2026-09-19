@@ -1,6 +1,6 @@
 {
   "name": "clariword-ai",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Understand difficult words and sentences in context, improve your pronunciation, and remember vocabulary from anything you read online.",
   "private": true,
   "type": "module",

@@ -2,8 +2,9 @@ import { DEFAULT_BACKEND_URL, SCHEMA_VERSION } from '@/shared/constants';
 import type { ReviewState, Settings } from '@/types';
 
 /**
- * Defaults are deliberately privacy-forward and work with no server:
- * demo mode on, page metadata off until the user opts in.
+ * Defaults are privacy-forward and work with no setup: the hosted backend is
+ * preconfigured so a fresh install works immediately, and page metadata stays
+ * off until the user opts in.
  */
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
@@ -16,7 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   saveSourcePage: true,
   sendNeighbouringContext: true,
   sendPageMetadata: false,
-  aiMode: 'mock',
+  aiMode: 'backend',
   backendUrl: DEFAULT_BACKEND_URL,
   backendToken: '',
   maxSelectionChars: 1200,

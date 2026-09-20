@@ -1,5 +1,6 @@
-import { SCHEMA_VERSION, STORAGE_KEYS } from '@/shared/constants';
+import { DEFAULT_BACKEND_URL, SCHEMA_VERSION, STORAGE_KEYS } from '@/shared/constants';
 import { localStore, type KeyValueStore } from '@/services/storage-service';
+import type { Settings } from '@/types';
 
 /**
  * Forward-only storage migrations.
@@ -15,12 +16,33 @@ export interface Migration {
 }
 
 export const MIGRATIONS: Migration[] = [
-  // Example of the shape a future migration takes:
-  // {
-  //   from: 1,
-  //   describe: 'move vocabulary from one blob to per-entry keys',
-  //   async run(store) { ... },
-  // },
+  {
+    from: 1,
+    describe: 'point installs that still hold the old localhost default at the hosted service',
+    async run(store) {
+      const settings = await store.get<Settings>(STORAGE_KEYS.settings);
+      if (!settings) return;
+
+      // Before v1.1.0 the shipped default was http://localhost:8787 in demo
+      // mode, so every existing install carries a URL that resolves to the
+      // reader's own machine. New defaults never overwrite stored settings,
+      // so without this an upgraded install stays broken forever.
+      //
+      // Only a URL the user never chose is rewritten: anything else is left
+      // alone, because it was deliberate.
+      const stale = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i;
+      const next = { ...settings };
+      let changed = false;
+
+      if (!settings.backendUrl || stale.test(settings.backendUrl.trim())) {
+        next.backendUrl = DEFAULT_BACKEND_URL;
+        next.aiMode = 'backend';
+        changed = true;
+      }
+
+      if (changed) await store.set({ [STORAGE_KEYS.settings]: next });
+    },
+  },
 ];
 
 export async function runMigrations(store: KeyValueStore = localStore): Promise<number> {

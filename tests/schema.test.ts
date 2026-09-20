@@ -2,6 +2,18 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseJsonLoose, validateChatAnswer, validateExplanation } from '@/shared/schema';
 import { ClariError } from '@/shared/errors';
+import { MemoryStore } from '@/services/storage-service';
+import { runMigrations } from '@/services/migrations';
+import { DEFAULT_SETTINGS } from '@/shared/defaults';
+import { DEFAULT_BACKEND_URL } from '@/shared/constants';
+import type { Settings } from '@/types';
+
+/** A KeyValueStore preloaded with the state an existing install would hold. */
+async function storeWith(entries: Record<string, unknown>): Promise<MemoryStore> {
+  const store = new MemoryStore();
+  await store.set(entries);
+  return store;
+}
 
 const validWord = {
   type: 'word',
@@ -78,4 +90,30 @@ test('chat answers must not be empty', () => {
   assert.equal(validateChatAnswer({ answer: ' hello ' }), 'hello');
   assert.equal(validateChatAnswer('plain string'), 'plain string');
   assert.throws(() => validateChatAnswer({ answer: '' }), ClariError);
+});
+
+test('an install still holding the old localhost default is moved to the hosted service', async () => {
+  const store = await storeWith({
+    'clariword.schemaVersion': 1,
+    'clariword.settings': { ...DEFAULT_SETTINGS, aiMode: 'mock', backendUrl: 'http://localhost:8787' },
+  });
+
+  await runMigrations(store);
+
+  const settings = await store.get<Settings>('clariword.settings');
+  assert.equal(settings?.backendUrl, DEFAULT_BACKEND_URL);
+  assert.equal(settings?.aiMode, 'backend');
+});
+
+test('a backend URL the user chose themselves is left alone', async () => {
+  const chosen = 'https://my-own-server.example.com';
+  const store = await storeWith({
+    'clariword.schemaVersion': 1,
+    'clariword.settings': { ...DEFAULT_SETTINGS, aiMode: 'backend', backendUrl: chosen },
+  });
+
+  await runMigrations(store);
+
+  const settings = await store.get<Settings>('clariword.settings');
+  assert.equal(settings?.backendUrl, chosen, 'a deliberate choice must survive the migration');
 });

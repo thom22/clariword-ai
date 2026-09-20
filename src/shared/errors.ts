@@ -54,12 +54,12 @@ export const Errors = {
     }),
   backendUnreachable: (url: string) =>
     new ClariError('BACKEND_UNREACHABLE', `Could not reach the ClariWord backend at ${url}.`, {
-      hint: 'Check the backend URL in Settings, or switch to Demo mode to try the extension without a server.',
+      hint: 'The ClariWord service could not be reached. Check your internet connection and try again.',
       retryable: true,
     }),
   backendError: (status: number, detail?: string) =>
     new ClariError('BACKEND_ERROR', `The backend returned an error (${status}).${detail ? ` ${detail}` : ''}`, {
-      hint: 'Check the backend logs. Demo mode works without a server.',
+      hint: 'The ClariWord service had a problem. Please try again in a moment.',
       retryable: status >= 500,
     }),
   rateLimited: (retryAfterSeconds?: number) =>
@@ -89,7 +89,7 @@ export const Errors = {
     }),
   notConfigured: () =>
     new ClariError('NOT_CONFIGURED', 'No AI backend is configured yet.', {
-      hint: 'Add your backend URL in Settings, or keep using Demo mode.',
+      hint: 'The ClariWord service is not reachable right now. Please try again.',
     }),
   speechUnavailable: () =>
     new ClariError('SPEECH_UNAVAILABLE', 'Speech is not available in this browser.', {

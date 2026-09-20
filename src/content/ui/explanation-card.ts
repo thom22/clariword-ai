@@ -302,7 +302,7 @@ export class ExplanationCard {
     if (meta.source === 'mock') {
       this.bodyNode.append(
         el('div', { class: 'cw-note', attrs: { 'data-variant': 'demo' } }, [
-          el('span', { text: 'Demo mode — responses come from the built-in offline lexicon. Add a backend in Settings for live explanations.' }),
+          el('span', { text: 'Offline mode — this explanation comes from the built-in lexicon because the ClariWord service could not be reached.' }),
         ]),
       );
     }

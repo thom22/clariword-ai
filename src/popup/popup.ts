@@ -17,17 +17,10 @@ function render(settings: Settings): void {
   query('#helper-hint').textContent =
     settings.helperMode === 'toolbar' ? 'Shows the quick-action toolbar' : 'Shows a small ClariWord button';
   query('#mode-note').textContent =
-    settings.aiMode === 'mock' ? 'Demo mode — no backend configured' : `Connected to ${hostOf(settings.backendUrl)}`;
+    settings.aiMode === 'mock' ? 'Offline mode — using the built-in lexicon' : 'Connected';
   query('#version').textContent = `v${__VERSION__}`;
 }
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-}
 
 function wire(settings: Settings): void {
   let current = settings;

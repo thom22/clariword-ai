@@ -25,7 +25,7 @@ import type {
 const DEMO_PREFIX = 'Demo mode —';
 
 function demoNote(subject: string): string {
-  return `${DEMO_PREFIX} ClariWord has no offline entry for ${subject}. Connect an AI backend in Settings for a real, context-aware explanation.`;
+  return `${DEMO_PREFIX} ClariWord has no offline entry for ${subject}. Live explanations will return once the service is reachable again.`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -264,7 +264,7 @@ export function createMockChatAnswer(request: ChatRequest): string {
     return `${entry.contextualMeaning}\n\n${DEMO_PREFIX} follow-up answers are limited to the built-in entry for “${entry.word}”. Connect a backend for a real conversation.`;
   }
 
-  return `${DEMO_PREFIX} the follow-up chat needs an AI backend. Add your backend URL in Settings, or select one of the built-in demo words (${Object.keys(MOCK_WORDS).slice(0, 6).join(', ')}) to see how the card behaves.`;
+  return `${DEMO_PREFIX} follow-up questions need the ClariWord service, which is not reachable right now. Please try again in a moment.`;
 }
 
 /** Small, deterministic delay so loading states are visible while developing. */

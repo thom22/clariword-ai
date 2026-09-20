@@ -182,7 +182,10 @@ test('an unreachable backend produces a retryable error with a way out', async (
       assert.ok(error instanceof ClariError);
       assert.equal(error.code, 'BACKEND_UNREACHABLE');
       assert.equal(error.retryable, true);
-      assert.match(error.hint ?? '', /Demo mode/);
+      // The hint must still offer the reader a way forward. It no longer names
+      // Demo mode, because the service is preconfigured and there is nothing
+      // for the reader to switch to.
+      assert.match(error.hint ?? '', /try again/i);
       return true;
     },
   );

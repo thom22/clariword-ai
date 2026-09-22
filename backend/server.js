@@ -111,6 +111,19 @@ const clean = (value, max = MAX_FIELD_CHARS) =>
 
 /** Accept only the documented fields, at the documented sizes. */
 function normaliseInput(body) {
+  // Reject an oversized selection rather than silently truncating it: a
+  // half-sentence produces a confusing explanation, or output the validator
+  // rejects with a 502 that looks like a provider fault.
+  if (typeof body.selectedText === 'string') {
+    const length = body.selectedText.replace(/\s+/g, ' ').trim().length;
+    if (length > MAX_SELECTION_CHARS) {
+      throw Object.assign(
+        new Error(`selectedText is ${length} characters; the maximum is ${MAX_SELECTION_CHARS}`),
+        { status: 400 },
+      );
+    }
+  }
+
   const selectedText = clean(body.selectedText, MAX_SELECTION_CHARS);
   if (!selectedText) throw Object.assign(new Error('selectedText is required'), { status: 400 });
 

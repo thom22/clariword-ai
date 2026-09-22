@@ -149,6 +149,29 @@ an empty gloss.
 
 ---
 
+### Field limits
+
+Each field is capped independently — the selection cap does not cover the whole
+request. Anything longer than its cap is trimmed, except `selectedText`, which
+is **rejected with a 400** rather than truncated: half a selection produces a
+misleading explanation.
+
+| Field | Max characters |
+| --- | --- |
+| `selectedText` | 4000 (400 on exceed) |
+| `sentence` | 1000 |
+| `previousSentence` | 1000 |
+| `nextSentence` | 1000 |
+| `pageTitle` | 200 |
+| `pageDomain` | 120 |
+| `intent` | 40 |
+
+The whole request body is capped at 32 KB; larger bodies get a 413. The
+extension sends well under these caps — its own selection limit defaults to
+1200 characters and is user-adjustable up to 4000.
+
+---
+
 ## `POST /api/explain/stream`
 
 Same request body as `POST /api/explain`, but the explanation is delivered as

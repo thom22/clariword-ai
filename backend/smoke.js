@@ -61,6 +61,14 @@ try {
   const scoring = await post('/api/pronunciation', {});
   check('pronunciation scoring is honestly unimplemented', scoring.status === 501, String(scoring.status));
 
+  const oversized = await post('/api/explain', { selectedText: 'word '.repeat(1000) });
+  check('an oversized selection is a 400, not a truncated answer', oversized.status === 400, String(oversized.status));
+  check(
+    'the 400 says what the limit is',
+    /maximum is \d+/.test((await oversized.json()).error ?? ''),
+    'error should name the cap',
+  );
+
   const huge = await post('/api/explain', { selectedText: 'x'.repeat(40_000) }).catch(() => ({ status: 'connection closed' }));
   check('oversized bodies are rejected', huge.status === 413 || huge.status === 400, String(huge.status));
 

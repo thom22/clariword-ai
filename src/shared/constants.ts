@@ -5,7 +5,7 @@ export const TAGLINE = 'Understand what you read. Remember what you learn.';
 export const SHORT_DESCRIPTION = 'Your AI reading and vocabulary companion.';
 
 /** Bumped whenever the stored shape changes; see shared/migrations.ts. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const STORAGE_KEYS = {
   settings: 'clariword.settings',

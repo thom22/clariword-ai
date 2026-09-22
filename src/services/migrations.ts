@@ -1,4 +1,5 @@
 import { DEFAULT_BACKEND_URL, SCHEMA_VERSION, STORAGE_KEYS } from '@/shared/constants';
+import { DEFAULT_SETTINGS } from '@/shared/defaults';
 import { localStore, type KeyValueStore } from '@/services/storage-service';
 import type { Settings } from '@/types';
 
@@ -41,6 +42,23 @@ export const MIGRATIONS: Migration[] = [
       }
 
       if (changed) await store.set({ [STORAGE_KEYS.settings]: next });
+    },
+  },
+  {
+    from: 2,
+    describe: 'bring installs still on the old 1200-character selection limit down to 900',
+    async run(store) {
+      const settings = await store.get<Settings>(STORAGE_KEYS.settings);
+      if (!settings) return;
+
+      // 1200 was the shipped default before v1.2.0 and is slow enough to hurt
+      // (~6.7s for a full passage). Only the old default is rewritten: a value
+      // the reader picked themselves is left alone.
+      if (settings.maxSelectionChars === 1200) {
+        await store.set({
+          [STORAGE_KEYS.settings]: { ...settings, maxSelectionChars: DEFAULT_SETTINGS.maxSelectionChars },
+        });
+      }
     },
   },
 ];

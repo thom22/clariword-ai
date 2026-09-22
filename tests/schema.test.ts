@@ -117,3 +117,27 @@ test('a backend URL the user chose themselves is left alone', async () => {
   const settings = await store.get<Settings>('clariword.settings');
   assert.equal(settings?.backendUrl, chosen, 'a deliberate choice must survive the migration');
 });
+
+test('installs on the old 1200-character limit are brought down to 900', async () => {
+  const store = await storeWith({
+    'clariword.schemaVersion': 2,
+    'clariword.settings': { ...DEFAULT_SETTINGS, maxSelectionChars: 1200 },
+  });
+
+  await runMigrations(store);
+
+  const settings = await store.get<Settings>('clariword.settings');
+  assert.equal(settings?.maxSelectionChars, 900);
+});
+
+test('a selection limit the user chose themselves is left alone', async () => {
+  const store = await storeWith({
+    'clariword.schemaVersion': 2,
+    'clariword.settings': { ...DEFAULT_SETTINGS, maxSelectionChars: 2500 },
+  });
+
+  await runMigrations(store);
+
+  const settings = await store.get<Settings>('clariword.settings');
+  assert.equal(settings?.maxSelectionChars, 2500, 'a deliberate choice must survive');
+});

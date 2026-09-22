@@ -148,7 +148,9 @@ test('an over-long selection is refused before anything is sent', async () => {
     (error: unknown) => {
       assert.ok(error instanceof ClariError);
       assert.equal(error.code, 'SELECTION_TOO_LONG');
-      assert.match(error.hint ?? '', /1,200 characters/);
+      // Assert the hint names the configured limit, whatever it is tuned to,
+      // rather than a literal that breaks on every adjustment.
+      assert.match(error.hint ?? '', new RegExp(`${DEFAULT_SETTINGS.maxSelectionChars.toLocaleString()} characters`));
       return true;
     },
   );

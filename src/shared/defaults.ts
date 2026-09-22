@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   aiMode: 'backend',
   backendUrl: DEFAULT_BACKEND_URL,
   backendToken: '',
-  maxSelectionChars: 1200,
+  maxSelectionChars: 900,
   ttsRate: 0.95,
   ttsVoiceUri: '',
   disabledDomains: [],

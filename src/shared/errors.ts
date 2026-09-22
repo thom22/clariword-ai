@@ -75,6 +75,15 @@ export const Errors = {
       hint: __DEV__ ? detail : 'Try again — if it keeps happening, check the backend prompt.',
       retryable: true,
     }),
+  /**
+   * Over the reader's own limit, but still under the ceiling — so the fix is a
+   * setting they can change, and the message should say so.
+   */
+  selectionOverSetting: (chars: number, limit: number, ceiling: number) =>
+    new ClariError('SELECTION_TOO_LONG', `That selection is ${chars.toLocaleString()} characters.`, {
+      hint: `Your longest selection is set to ${limit.toLocaleString()}. Raise it to up to ${ceiling.toLocaleString()} in Settings, or select a little less.`,
+    }),
+  /** At the ceiling: there is no setting that would allow this. */
   selectionTooLong: (chars: number, max: number) =>
     new ClariError('SELECTION_TOO_LONG', `That selection is ${chars.toLocaleString()} characters.`, {
       hint: `ClariWord explains up to ${max.toLocaleString()} characters at a time. Try selecting a sentence or paragraph.`,

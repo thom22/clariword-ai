@@ -5,7 +5,7 @@ import { ClariError } from '@/shared/errors';
 import { MemoryStore } from '@/services/storage-service';
 import { runMigrations } from '@/services/migrations';
 import { DEFAULT_SETTINGS } from '@/shared/defaults';
-import { DEFAULT_BACKEND_URL } from '@/shared/constants';
+import { DEFAULT_BACKEND_URL, HARD_MAX_SELECTION_CHARS } from '@/shared/constants';
 import type { Settings } from '@/types';
 
 /** A KeyValueStore preloaded with the state an existing install would hold. */
@@ -118,7 +118,7 @@ test('a backend URL the user chose themselves is left alone', async () => {
   assert.equal(settings?.backendUrl, chosen, 'a deliberate choice must survive the migration');
 });
 
-test('installs on the old 1200-character limit are brought down to 900', async () => {
+test('installs on the old 1200-character limit end up at the current default', async () => {
   const store = await storeWith({
     'clariword.schemaVersion': 2,
     'clariword.settings': { ...DEFAULT_SETTINGS, maxSelectionChars: 1200 },
@@ -127,10 +127,23 @@ test('installs on the old 1200-character limit are brought down to 900', async (
   await runMigrations(store);
 
   const settings = await store.get<Settings>('clariword.settings');
-  assert.equal(settings?.maxSelectionChars, 900);
+  // 1200 -> 900 (v3) -> 400 (v4): the chain runs to the current default.
+  assert.equal(settings?.maxSelectionChars, DEFAULT_SETTINGS.maxSelectionChars);
 });
 
-test('a selection limit the user chose themselves is left alone', async () => {
+test('a chosen limit survives if it is still allowed', async () => {
+  const store = await storeWith({
+    'clariword.schemaVersion': 2,
+    'clariword.settings': { ...DEFAULT_SETTINGS, maxSelectionChars: 700 },
+  });
+
+  await runMigrations(store);
+
+  const settings = await store.get<Settings>('clariword.settings');
+  assert.equal(settings?.maxSelectionChars, 700, 'a deliberate choice under the ceiling must survive');
+});
+
+test('a chosen limit above the new ceiling is brought down to it', async () => {
   const store = await storeWith({
     'clariword.schemaVersion': 2,
     'clariword.settings': { ...DEFAULT_SETTINGS, maxSelectionChars: 2500 },
@@ -139,5 +152,5 @@ test('a selection limit the user chose themselves is left alone', async () => {
   await runMigrations(store);
 
   const settings = await store.get<Settings>('clariword.settings');
-  assert.equal(settings?.maxSelectionChars, 2500, 'a deliberate choice must survive');
+  assert.equal(settings?.maxSelectionChars, HARD_MAX_SELECTION_CHARS);
 });

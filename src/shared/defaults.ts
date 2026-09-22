@@ -1,4 +1,4 @@
-import { DEFAULT_BACKEND_URL, SCHEMA_VERSION } from '@/shared/constants';
+import { DEFAULT_BACKEND_URL, HARD_MAX_SELECTION_CHARS, SCHEMA_VERSION } from '@/shared/constants';
 import type { ReviewState, Settings } from '@/types';
 
 /**
@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   aiMode: 'backend',
   backendUrl: DEFAULT_BACKEND_URL,
   backendToken: '',
-  maxSelectionChars: 900,
+  maxSelectionChars: 400,
   ttsRate: 0.95,
   ttsVoiceUri: '',
   disabledDomains: [],
@@ -68,7 +68,7 @@ export function coerceSettings(stored: unknown): Settings {
   if (typeof input.ttsVoiceUri === 'string') result.ttsVoiceUri = input.ttsVoiceUri;
 
   if (typeof input.maxSelectionChars === 'number' && Number.isFinite(input.maxSelectionChars)) {
-    result.maxSelectionChars = Math.min(4000, Math.max(120, Math.round(input.maxSelectionChars)));
+    result.maxSelectionChars = Math.min(HARD_MAX_SELECTION_CHARS, Math.max(120, Math.round(input.maxSelectionChars)));
   }
   if (typeof input.ttsRate === 'number' && Number.isFinite(input.ttsRate)) {
     result.ttsRate = Math.min(1.6, Math.max(0.5, input.ttsRate));

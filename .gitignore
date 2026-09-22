@@ -5,3 +5,6 @@ release/
 .env
 *.log
 .DS_Store
+
+# private notes, never committed
+*.local.md

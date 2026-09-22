@@ -136,7 +136,13 @@ export class AiService {
     if (!selected) throw Errors.emptySelection();
 
     const limit = Math.min(settings.maxSelectionChars, HARD_MAX_SELECTION_CHARS);
-    if (selected.length > limit) throw Errors.selectionTooLong(selected.length, limit);
+    if (selected.length > limit) {
+      // Over the ceiling is a dead end; over their own setting is a setting
+      // they can change, so point them at it instead of just refusing.
+      throw limit < HARD_MAX_SELECTION_CHARS
+        ? Errors.selectionOverSetting(selected.length, limit, HARD_MAX_SELECTION_CHARS)
+        : Errors.selectionTooLong(selected.length, limit);
+    }
 
     const outgoing = buildOutgoingContext(request.context, settings);
     const payload: ExplainRequest = { ...request, context: outgoing };

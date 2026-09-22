@@ -148,9 +148,9 @@ test('an over-long selection is refused before anything is sent', async () => {
     (error: unknown) => {
       assert.ok(error instanceof ClariError);
       assert.equal(error.code, 'SELECTION_TOO_LONG');
-      // Assert the hint names the configured limit, whatever it is tuned to,
-      // rather than a literal that breaks on every adjustment.
-      assert.match(error.hint ?? '', new RegExp(`${DEFAULT_SETTINGS.maxSelectionChars.toLocaleString()} characters`));
+      // The hint names the configured limit, whatever it is tuned to, rather
+      // than a literal that breaks on every adjustment.
+      assert.match(error.hint ?? '', new RegExp(String(DEFAULT_SETTINGS.maxSelectionChars)));
       return true;
     },
   );
@@ -188,6 +188,38 @@ test('an unreachable backend produces a retryable error with a way out', async (
       // Demo mode, because the service is preconfigured and there is nothing
       // for the reader to switch to.
       assert.match(error.hint ?? '', /try again/i);
+      return true;
+    },
+  );
+});
+
+test('over your own setting points you at the setting, not a dead end', async () => {
+  const service = new AiService();
+  const long = 'word '.repeat(120); // 600 chars, over 400 but under the 900 ceiling
+  await assert.rejects(
+    () => service.explain(request({ context: { ...context, selectedText: long } }), settings()),
+    (error: unknown) => {
+      assert.ok(error instanceof ClariError);
+      assert.equal(error.code, 'SELECTION_TOO_LONG');
+      assert.match(error.hint ?? '', /Settings/, 'should tell the reader they can raise it');
+      assert.match(error.hint ?? '', /900/, 'should name what they can raise it to');
+      return true;
+    },
+  );
+});
+
+test('over the ceiling does not suggest a setting that cannot help', async () => {
+  const service = new AiService();
+  const huge = 'word '.repeat(400); // 2000 chars, over the 900 ceiling
+  await assert.rejects(
+    () =>
+      service.explain(
+        request({ context: { ...context, selectedText: huge } }),
+        settings({ maxSelectionChars: 900 }),
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof ClariError);
+      assert.doesNotMatch(error.hint ?? '', /Raise it/, 'there is nothing to raise it to');
       return true;
     },
   );

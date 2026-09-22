@@ -17,7 +17,7 @@ import { createProvider } from './provider.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
 const MAX_BODY_BYTES = 32 * 1024;
-const MAX_SELECTION_CHARS = 4000;
+const MAX_SELECTION_CHARS = 900;
 const MAX_FIELD_CHARS = 1000;
 const RATE_LIMIT = Number(process.env.RATE_LIMIT_PER_MINUTE ?? 20);
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN ?? '';

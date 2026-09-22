@@ -5,7 +5,7 @@ export const TAGLINE = 'Understand what you read. Remember what you learn.';
 export const SHORT_DESCRIPTION = 'Your AI reading and vocabulary companion.';
 
 /** Bumped whenever the stored shape changes; see shared/migrations.ts. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const STORAGE_KEYS = {
   settings: 'clariword.settings',
@@ -16,7 +16,7 @@ export const STORAGE_KEYS = {
 } as const;
 
 /** Selections beyond this are refused outright, whatever the user setting. */
-export const HARD_MAX_SELECTION_CHARS = 4000;
+export const HARD_MAX_SELECTION_CHARS = 900;
 /** Neighbouring-sentence context is trimmed to this before leaving the page. */
 export const MAX_CONTEXT_SENTENCE_CHARS = 400;
 /** How many past encounters we keep per vocabulary entry. */

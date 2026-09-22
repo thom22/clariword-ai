@@ -1,4 +1,9 @@
-import { DEFAULT_BACKEND_URL, SCHEMA_VERSION, STORAGE_KEYS } from '@/shared/constants';
+import {
+  DEFAULT_BACKEND_URL,
+  HARD_MAX_SELECTION_CHARS,
+  SCHEMA_VERSION,
+  STORAGE_KEYS,
+} from '@/shared/constants';
 import { DEFAULT_SETTINGS } from '@/shared/defaults';
 import { localStore, type KeyValueStore } from '@/services/storage-service';
 import type { Settings } from '@/types';
@@ -58,6 +63,28 @@ export const MIGRATIONS: Migration[] = [
         await store.set({
           [STORAGE_KEYS.settings]: { ...settings, maxSelectionChars: DEFAULT_SETTINGS.maxSelectionChars },
         });
+      }
+    },
+  },
+  {
+    from: 3,
+    describe: 'move the old 900 default to 400 and bring anything above the new ceiling down',
+    async run(store) {
+      const settings = await store.get<Settings>(STORAGE_KEYS.settings);
+      if (!settings) return;
+
+      const current = settings.maxSelectionChars;
+      // 900 was the shipped default before this version; anything above the
+      // ceiling can no longer be honoured either way.
+      const next =
+        current === 900
+          ? DEFAULT_SETTINGS.maxSelectionChars
+          : current > HARD_MAX_SELECTION_CHARS
+            ? HARD_MAX_SELECTION_CHARS
+            : current;
+
+      if (next !== current) {
+        await store.set({ [STORAGE_KEYS.settings]: { ...settings, maxSelectionChars: next } });
       }
     },
   },

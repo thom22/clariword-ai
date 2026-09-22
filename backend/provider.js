@@ -59,6 +59,56 @@ export class AnthropicProvider {
       .join('')
       .trim();
   }
+
+  /** Yields text deltas as the model produces them. */
+  async *stream({ system, user, maxTokens = 900 }) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: maxTokens,
+          temperature: 0.2,
+          stream: true,
+          system,
+          messages: [{ role: 'user', content: user }],
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new HttpError(response.status, `provider returned ${response.status}: ${text.slice(0, 400)}`);
+      }
+
+      let buffer = '';
+      for await (const chunk of response.body) {
+        buffer += Buffer.from(chunk).toString('utf8');
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          try {
+            const event = JSON.parse(trimmed.slice(5).trim());
+            if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+              yield event.delta.text;
+            }
+          } catch {
+            // Partial frame; the next chunk completes it.
+          }
+        }
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }
 
 /** OpenAI-compatible Chat Completions (also covers most self-hosted gateways). */
@@ -86,12 +136,68 @@ export class OpenAiProvider {
     );
     return payload.choices?.[0]?.message?.content?.trim() ?? '';
   }
+
+  /** Yields text deltas as the model produces them. */
+  async *stream({ system, user, maxTokens = 900 }) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${this.apiKey}` },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: maxTokens,
+          temperature: 0.2,
+          response_format: { type: 'json_object' },
+          stream: true,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new HttpError(response.status, `provider returned ${response.status}: ${text.slice(0, 400)}`);
+      }
+
+      // Server-sent events: `data: {json}` lines, terminated by `data: [DONE]`.
+      let buffer = '';
+      for await (const chunk of response.body) {
+        buffer += Buffer.from(chunk).toString('utf8');
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const data = trimmed.slice(5).trim();
+          if (data === '[DONE]') return;
+          try {
+            const delta = JSON.parse(data).choices?.[0]?.delta?.content;
+            if (delta) yield delta;
+          } catch {
+            // A partial SSE frame: the next chunk completes it.
+          }
+        }
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }
 
 /** Returns canned JSON so the backend can be exercised without a provider key. */
 export class EchoProvider {
   constructor() {
     this.model = 'echo (no provider configured)';
+  }
+
+  /** Emits the canned payload in chunks so the streaming route is testable. */
+  async *stream(options) {
+    const text = await this.complete(options);
+    for (let i = 0; i < text.length; i += 64) yield text.slice(i, i + 64);
   }
 
   async complete({ user }) {

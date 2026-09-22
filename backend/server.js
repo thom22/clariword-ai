@@ -235,6 +235,80 @@ async function handleChat(body) {
   return { answer };
 }
 
+/* ------------------------------------------------------------------ */
+/* Streaming                                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Pull every *completed* top-level string field out of a partial JSON document.
+ *
+ * The client must never see half a value, so a field counts as complete only
+ * once its closing quote has arrived. Arrays and objects are skipped here and
+ * picked up from the final parse, which keeps this scanner small and
+ * predictable — it is the part most likely to be wrong, so it does less.
+ */
+function completedStringFields(partial) {
+  const out = {};
+  // "key" : "value"  — with the closing quote present. Escaped quotes inside
+  // the value are handled by requiring the terminator not be preceded by \.
+  const pattern = /"([A-Za-z][A-Za-z0-9_]*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  let match;
+  while ((match = pattern.exec(partial)) !== null) {
+    try {
+      out[match[1]] = JSON.parse(`"${match[2]}"`);
+    } catch {
+      // Not yet a valid escape sequence; it will parse on a later pass.
+    }
+  }
+  return out;
+}
+
+/** One NDJSON frame per line, flushed immediately. */
+function sendFrame(response, frame) {
+  response.write(`${JSON.stringify(frame)}\n`);
+}
+
+async function handleExplainStream(body, response) {
+  const input = normaliseInput(body);
+  const { system, user } = buildExplainPrompt(input);
+  const maxTokens = input.selectionType === 'word' ? 800 : 1200;
+
+  response.writeHead(200, {
+    'content-type': 'application/x-ndjson; charset=utf-8',
+    'cache-control': 'no-cache, no-transform',
+    connection: 'keep-alive',
+    // Proxies that buffer would defeat the point of streaming.
+    'x-accel-buffering': 'no',
+  });
+
+  let raw = '';
+  const sent = {};
+  try {
+    for await (const delta of provider.stream({ system, user, maxTokens })) {
+      raw += delta;
+      const fields = completedStringFields(raw);
+      for (const [key, value] of Object.entries(fields)) {
+        if (sent[key] === value) continue;
+        sent[key] = value;
+        sendFrame(response, { type: 'field', key, value });
+      }
+    }
+
+    // The authoritative result: same parsing and the same validator the
+    // non-streaming route uses, so a stream cannot return a shape that
+    // /api/explain would have rejected.
+    const explanation = assertExplanationShape(parseModelJson(raw), input.selectionType);
+    sendFrame(response, { type: 'done', explanation });
+  } catch (error) {
+    const status = error?.status ?? 500;
+    if (status >= 500) console.error('[clariword] stream', error);
+    // Headers are already sent, so the error has to travel in-band.
+    sendFrame(response, { type: 'error', status, error: error?.message ?? 'internal error' });
+  } finally {
+    response.end();
+  }
+}
+
 const server = http.createServer(async (request, response) => {
   const allowed = cors(request, response);
   if (request.method === 'OPTIONS') {
@@ -262,6 +336,7 @@ const server = http.createServer(async (request, response) => {
   try {
     const body = await readBody(request);
     if (url.pathname === '/api/explain') return send(response, 200, await handleExplain(body));
+    if (url.pathname === '/api/explain/stream') return await handleExplainStream(body, response);
     if (url.pathname === '/api/chat') return send(response, 200, await handleChat(body));
     if (url.pathname === '/api/pronunciation') {
       // Deliberately not implemented: scoring needs a real speech model, and

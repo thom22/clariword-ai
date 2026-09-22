@@ -6,6 +6,7 @@ import { createMockChatAnswer, createMockExplanation, mockLatencyMs } from '@/se
 import type {
   ChatRequest,
   ChatResponse,
+  Explanation,
   ExplainRequest,
   ExplainResponse,
   PageContext,
@@ -196,6 +197,106 @@ export class AiService {
     // Run mock output through the same validator as the backend, so demo mode
     // exercises the real code path.
     return validateExplanation(createMockExplanation(request));
+  }
+
+  /**
+   * Explain, emitting partial results as the model produces them.
+   *
+   * `onPartial` receives a progressively more complete explanation; the promise
+   * resolves with the validated final one. Any failure falls back to the
+   * non-streaming route, so streaming can only ever be faster, never worse.
+   */
+  async explainStreaming(
+    request: ExplainRequest,
+    settings: Settings,
+    onPartial: (partial: Partial<Explanation> & { type: Explanation['type'] }) => void,
+  ): Promise<ExplainResponse> {
+    if (settings.aiMode === 'mock') return this.explain(request, settings);
+
+    const outgoing = buildOutgoingContext(request.context, settings);
+    const payload: ExplainRequest = { ...request, context: outgoing };
+    const key = cacheKey('explain', payload, settings);
+
+    const cached = this.cache.get(key);
+    if (cached) return cached;
+
+    const started = Date.now();
+    try {
+      const explanation = await this.streamExplain(payload, settings, onPartial);
+      const response: ExplainResponse = {
+        explanation,
+        meta: { source: settings.aiMode, elapsedMs: Date.now() - started },
+      };
+      this.cache.set(key, response);
+      return response;
+    } catch (error) {
+      // A half-finished stream leaves the card mid-render, so fall back to the
+      // route that returns one complete payload.
+      if (__DEV__) console.warn('[ClariWord] streaming failed, falling back', error);
+      return this.explain(request, settings);
+    }
+  }
+
+  private async streamExplain(
+    payload: ExplainRequest,
+    settings: Settings,
+    onPartial: (partial: Partial<Explanation> & { type: Explanation['type'] }) => void,
+  ): Promise<Explanation> {
+    const base = settings.backendUrl.trim().replace(/\/+$/, '');
+    if (!base) throw Errors.notConfigured();
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) throw Errors.offline();
+    if (!this.limiter.take()) throw Errors.rateLimited(this.limiter.retryAfterSeconds());
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(new URL('/api/explain/stream', `${base}/`).toString(), {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(settings.backendToken ? { authorization: `Bearer ${settings.backendToken}` } : {}),
+        },
+        body: JSON.stringify(toWirePayload(payload, settings)),
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) throw Errors.backendError(response.status, '');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      const partial: Record<string, unknown> = { type: payload.kind };
+      let buffer = '';
+      let final: Explanation | null = null;
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const frame = JSON.parse(line) as
+            | { type: 'field'; key: string; value: string }
+            | { type: 'done'; explanation: unknown }
+            | { type: 'error'; status: number; error: string };
+
+          if (frame.type === 'field') {
+            partial[frame.key] = frame.value;
+            onPartial({ ...partial } as Partial<Explanation> & { type: Explanation['type'] });
+          } else if (frame.type === 'done') {
+            final = validateExplanation(frame.explanation);
+          } else {
+            throw Errors.backendError(frame.status, frame.error);
+          }
+        }
+      }
+
+      if (!final) throw Errors.backendError(502, 'the stream ended before the explanation was complete');
+      return final;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   private async postJson(path: string, body: unknown, settings: Settings): Promise<unknown> {

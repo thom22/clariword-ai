@@ -77,9 +77,22 @@ registerHandlers<MessageMap>({
     return { ok: true, version: __VERSION__ };
   },
 
-  async EXPLAIN(request) {
+  async EXPLAIN(request, sender) {
     const settings = await settingsService.get();
-    const response = await aiService.explain(request, settings);
+    const tabId = sender?.tab?.id;
+
+    // Stream when we can push partials back to the tab that asked; the card
+    // then fills in as the model writes instead of after it finishes.
+    const response =
+      tabId === undefined
+        ? await aiService.explain(request, settings)
+        : await aiService.explainStreaming(request, settings, (partial) => {
+            void sendToTab(tabId, 'EXPLANATION_PARTIAL', {
+              requestId: request.requestId ?? 0,
+              partial,
+            }).catch(() => undefined);
+          });
+
     if (!response.meta.cached) void statsService.increment('lookups');
     return response;
   },

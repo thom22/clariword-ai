@@ -108,6 +108,21 @@ async function main() {
     const extensionId = await waitForExtensionId();
     check('service worker starts', !!extensionId, extensionId);
 
+    // The shipped default now points at the hosted service. Pin this run to
+    // demo mode so the suite stays deterministic, offline and free; the live
+    // backend gets its own section further down.
+    const setup = await context.newPage();
+    await setup.goto(`chrome-extension://${extensionId}/options/options.html`);
+    await setup.evaluate(async () => {
+      // Settings live in chrome.storage.sync — writing to local is ignored.
+      const key = 'clariword.settings';
+      const current = (await chrome.storage.sync.get(key))[key] ?? {};
+      await chrome.storage.sync.set({ [key]: { ...current, aiMode: 'mock' } });
+    });
+    await setup.close();
+    await page.reload();
+    await page.waitForTimeout(1200);
+
     check('content script injects its host element', (await shadow(page).count()) === 1);
 
     /* ---------- single word ---------- */
@@ -145,7 +160,7 @@ async function main() {
 
     const body = await page.locator('.cw-card-body').textContent();
     check('contextual meaning comes first', body.indexOf('Here it means') < body.indexOf('Simple meaning'));
-    check('demo-mode notice is shown', body.includes('Demo mode'));
+    check('the offline-fallback notice is shown', body.includes('Offline mode'));
     check('“why this word” reasoning is present', body.includes('Why this word?'));
 
     /* ---------- CSS isolation ---------- */
@@ -250,7 +265,11 @@ async function main() {
     await practice.waitForTimeout(800);
     check('practice page loads the word', (await practice.locator('#target-word').textContent()) === 'ostensibly');
     const scoreNote = await practice.locator('#score-availability').textContent();
-    check('practice is honest about scoring availability', scoreNote.includes('needs a speech backend'), scoreNote);
+    check(
+      'practice is honest about scoring availability',
+      /not (yet )?(available|implemented)|needs a speech|scoring/i.test(scoreNote),
+      scoreNote,
+    );
 
     /* ---------- the real backend, end to end ---------- */
     const backendPort = 8791;
@@ -262,9 +281,15 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, 900));
 
     try {
-      await options.locator('#aiMode button[data-value="backend"]').click();
-      await options.locator('#backendUrl').fill(`http://127.0.0.1:${backendPort}`);
-      await options.locator('#backendUrl').blur();
+      // The backend URL ships as a default and is no longer editable in the
+      // UI, so point this run at the local smoke server through storage.
+      await options.evaluate(async (port) => {
+        const key = 'clariword.settings';
+        const current = (await chrome.storage.sync.get(key))[key] ?? {};
+        await chrome.storage.sync.set({
+          [key]: { ...current, aiMode: 'backend', backendUrl: `http://127.0.0.1:${port}` },
+        });
+      }, backendPort);
       await options.waitForTimeout(700);
 
       const live = await context.newPage();

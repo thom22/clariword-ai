@@ -149,6 +149,38 @@ an empty gloss.
 
 ---
 
+## `POST /api/explain/stream`
+
+Same request body as `POST /api/explain`, but the explanation is delivered as
+it is generated so the card can fill in rather than wait. Roughly 3 seconds of
+model time becomes well under a second before the reader sees the word, its
+pronunciation and what it means here.
+
+`content-type: application/x-ndjson` — one JSON object per line, flushed as it
+is produced. Three frame types:
+
+```jsonc
+{ "type": "field", "key": "contextualMeaning", "value": "..." }  // 0..n
+{ "type": "done",  "explanation": { ... } }                      // exactly 1
+{ "type": "error", "status": 502, "error": "..." }               // on failure
+```
+
+`field` frames carry only *completed* top-level string values, so a client
+never sees half a sentence. Arrays and nested objects are omitted here and
+arrive with `done`.
+
+The `done` frame holds the full explanation, parsed and validated by the same
+code `/api/explain` uses — a stream cannot return a shape the non-streaming
+route would have rejected. **Treat `done` as authoritative** and the `field`
+frames as a preview.
+
+Because the response status is sent before generation begins, a mid-stream
+failure arrives as an `error` frame on a 200 response rather than an HTTP error
+code. A client that cannot use partial output should call `/api/explain`, which
+is unchanged and returns one complete payload.
+
+---
+
 ## `POST /api/chat`
 
 Same context fields as `/api/explain`, plus:

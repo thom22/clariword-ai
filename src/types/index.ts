@@ -72,6 +72,11 @@ export interface ExplainRequest {
   accent: Accent;
   /** Focus a specific facet, driven by the quick-action buttons. */
   intent?: ExplainIntent;
+  /**
+   * Correlates streamed partials with the request that produced them, so a
+   * superseded lookup cannot overwrite a newer one mid-render.
+   */
+  requestId?: number;
 }
 
 export type ExplainIntent =

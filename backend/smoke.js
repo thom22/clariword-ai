@@ -48,6 +48,16 @@ try {
   const chat = await post('/api/chat', { ...sample, question: 'Is this formal English?' });
   check('POST /api/chat returns an answer', chat.status === 200 && typeof (await chat.json()).answer === 'string');
 
+  const streamed = await post('/api/explain/stream', sample);
+  const frames = (await streamed.text()).trim().split('\n').map((line) => JSON.parse(line));
+  check('POST /api/explain/stream returns 200', streamed.status === 200, String(streamed.status));
+  check('the stream emits fields before it finishes', frames.some((f) => f.type === 'field'));
+  check(
+    'the stream ends with a validated explanation',
+    frames.at(-1)?.type === 'done' && frames.at(-1)?.explanation?.type === 'word',
+    JSON.stringify(frames.at(-1)).slice(0, 120),
+  );
+
   const scoring = await post('/api/pronunciation', {});
   check('pronunciation scoring is honestly unimplemented', scoring.status === 501, String(scoring.status));
 

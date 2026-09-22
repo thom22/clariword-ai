@@ -71,6 +71,11 @@ export interface TabMessageMap {
   SPEAK_SELECTION: { request: { selectionText?: string }; response: { handled: boolean } };
   SAVE_SELECTION: { request: { selectionText?: string }; response: { handled: boolean } };
   SETTINGS_CHANGED: { request: { settings: Settings }; response: { handled: boolean } };
+  /** A progressively more complete explanation, pushed while the model streams. */
+  EXPLANATION_PARTIAL: {
+    request: { requestId: number; partial: Record<string, unknown> };
+    response: { handled: boolean };
+  };
 }
 
 type Reply<T> = { ok: true; data: T } | { ok: false; error: ClariErrorShape };

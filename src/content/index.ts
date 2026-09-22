@@ -76,6 +76,16 @@ async function bootstrap(): Promise<void> {
       await handleExternalRequest('explain', selectionText, { autoSave: true });
       return { handled: true };
     },
+    async EXPLANATION_PARTIAL({ requestId, partial }) {
+      // Ignore anything from a lookup the reader has already moved past.
+      if (!session || !card || session.requestId !== requestId) return { handled: false };
+      card.setPartial({
+        partial: partial as Parameters<typeof card.setPartial>[0]['partial'],
+        selectedText: session.context.selectedText,
+      });
+      return { handled: true };
+    },
+
     async SETTINGS_CHANGED({ settings: next }) {
       settings = next;
       host?.setTheme(next.theme);
@@ -260,6 +270,7 @@ async function requestExplanation(intent: ExplainIntent, options: { autoSave?: b
         explanationLevel: settings.explanationLevel,
         accent: settings.accent,
         intent,
+        requestId,
       }),
       sendMessage('TERM_STATUS', { text: session.context.selectedText }).catch(() => ({
         saved: false,

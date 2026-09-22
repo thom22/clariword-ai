@@ -228,6 +228,50 @@ export class ExplanationCard {
     this.reposition();
   }
 
+  /**
+   * Render a still-arriving explanation.
+   *
+   * Only the header and whatever prose has landed so far is drawn: the action
+   * chips and save button need a complete explanation, and showing controls
+   * that are about to be replaced reads as jitter. `setContent` takes over the
+   * moment the final payload validates.
+   */
+  setPartial(options: {
+    partial: Partial<Explanation> & { type: Explanation['type'] };
+    selectedText: string;
+  }): void {
+    const { partial, selectedText } = options;
+    if (!this.bodyNode || !this.headNode) return;
+
+    const info = headerInfoFor(partial as Explanation, selectedText);
+    this.speakText = info.speakText;
+
+    clear(this.headNode);
+    const pron = el('div', { class: 'cw-pron' });
+    if (info.ipa) pron.append(el('span', { class: 'cw-ipa', text: info.ipa }));
+    const phonetic = renderPhonetic(info.phonetic);
+    if (phonetic) pron.append(phonetic);
+    if (info.partOfSpeech) pron.append(el('span', { class: 'cw-pos', text: info.partOfSpeech }));
+
+    this.headNode.append(
+      el('div', { class: 'cw-head-main' }, [
+        el('h2', {
+          class: info.long ? 'cw-term cw-term-long' : 'cw-term',
+          text: truncate(info.title, 160),
+        }),
+        pron.childElementCount ? pron : null,
+      ]),
+      this.closeButton(),
+    );
+
+    clear(this.bodyNode);
+    this.bodyNode.append(
+      renderExplanation(partial as Explanation, {
+        onVocabularyClick: (word) => this.callbacks.onVocabularyClick(word),
+      }),
+    );
+  }
+
   setContent(options: {
     explanation: Explanation;
     meta: ExplainResponseMeta;
